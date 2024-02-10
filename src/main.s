@@ -6,6 +6,14 @@
 ; Result get_service_handle(Handle* handle_out, char* service_name)
 get_service_handle equ 0x10DB40
 
+;                    (r0)       (r1)        (r2)
+; void* memcpy(void* dst, void* src, size_t size)
+memcpy equ 0x10D2DC
+
+;                     (r0)
+; size_t strlen(char* string)
+strlen equ 0x10F8B0
+
 replace_hook_addr equ 0x113868
 replace_function_addr equ 0x11AA70
 
@@ -23,7 +31,7 @@ replace_function_addr equ 0x11AA70
 	
 	;                                                         (r0)                     (r1)          (r2)
 	; returns modified char* in r0, func variables are (char* stringToReplaceOn, char* target, char* replacement)
-	find_and_replace: ; 0x1ac38
+	find_and_replace: ; 0x1ac38 0x1ab90
 		push    {r11, lr}
 		add     r11, sp, #4
 		sub     sp, sp, #0x20
@@ -68,20 +76,20 @@ replace_function_addr equ 0x11AA70
 		bl      memcpy
 		b       find_and_replace_lab_2
 		
-	find_and_replace_lab_1: ; 0x1ace4
+	find_and_replace_lab_1: ; 0x1ac3c
 		mov     r0, r0
 		
-	find_and_replace_lab_2: ; 0x1ace8
+	find_and_replace_lab_2: ; 0x1ac40
 		sub     sp, r11, #4
 		pop     {r11, lr}
 		bx      lr
 		
-	handle_replacements: ; 0x1acf4
+	handle_replacements: ; 0x1ac4c
 		push    {r11, lr}
 		add     r11, sp, #4
 		sub     sp, sp, #0x28
 		str     r0, [r11, #-0x28] ; store r0 (our char* we are replacing string stuff on) into stack -0x28
-		bl      get_local_account_id ; get the local account id
+		bl      get_nasc_environment ; get the nasc environment
 		cmp     r0, #2 ; check if r0 is 2
 		bne     handle_replacements_end ; if it isnt, skip the replacements
 
@@ -108,7 +116,7 @@ replace_function_addr equ 0x11AA70
 		ldr     r0, [r11, #-0x28] ; load our char* back into r0
 		bl      find_and_replace
 		
-	handle_replacements_end: ; 0x1ad50
+	handle_replacements_end: ; 0x1acb8
 		mov     r0, r0
 		mov     r0, r3
 		sub     sp, r11, #4
